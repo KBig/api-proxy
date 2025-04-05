@@ -1,12 +1,11 @@
 from fastapi import FastAPI, Form
-import openai
+from openai import OpenAI
 import os
 import json
 
 app = FastAPI()
 
-# Récupère la clé API OpenAI depuis la variable d'environnement
-openai.api_key = os.environ.get("OPENAI_API_KEY", "")
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY", ""))
 
 @app.post("/analyser")
 async def analyser(data: str = Form(...)):
@@ -20,21 +19,22 @@ async def analyser(data: str = Form(...)):
         "{\"SIGNAL\": \"...\", \"VOLUME\": ..., \"SL\": ..., \"TP\": ..., \"JUSTIFICATION\": \"...\"}.\n"
         + data
     )
-    
+
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo-1106",
             messages=[
                 {"role": "system", "content": "Vous êtes un expert en analyse technique."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.2
+            temperature=0.2,
+            response_format="json"
         )
-        content = response.choices[0].message.content.strip()
-        # Transformer la réponse JSON en objet
-        data_json = json.loads(content)
-        # Convertir l'objet en CSV simple
-        csv_response = f'{data_json["SIGNAL"]},{data_json["VOLUME"]},{data_json["SL"]},{data_json["TP"]},{data_json["JUSTIFICATION"]}'
+        data_json = response.choices[0].message.content
+        result = json.loads(data_json)
+
+        csv_response = f'{result["SIGNAL"]},{result["VOLUME"]},{result["SL"]},{result["TP"]},{result["JUSTIFICATION"]}'
         return {"result": csv_response}
+
     except Exception as e:
         return {"result": f"ERROR,{str(e)}"}
