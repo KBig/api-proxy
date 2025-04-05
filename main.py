@@ -1,10 +1,11 @@
 from fastapi import FastAPI, Form
 import openai
+import os
 
 app = FastAPI()
 
 # Remplacez "YOUR_OPENAI_API_KEY" par votre clé API OpenAI réelle.
-openai.api_key = "YOUR_OPENAI_API_KEY"
+openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 @app.post("/analyser")
 async def analyser(data: str = Form(...)):
