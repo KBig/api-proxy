@@ -4,16 +4,17 @@ import os
 
 app = FastAPI()
 
-# Remplacez "YOUR_OPENAI_API_KEY" par votre clé API OpenAI réelle.
-openai.api_key = os.environ.get("OPENAI_API_KEY")
+# Lire la clé API depuis la variable d'environnement
+openai.api_key = os.environ.get("OPENAI_API_KEY", "")
 
 @app.post("/analyser")
 async def analyser(data: str = Form(...)):
+    # Construire un prompt simple
     prompt = (
-        "Tu es un analyste technique expert. Voici les données du marché:\n\n"
+        "Tu es un analyste technique expert. Voici les données du marché :\n\n"
         f"{data}\n\n"
-        "Réponds uniquement sous cette forme très simple : SIGNAL,VOLUME,SL,TP,JUSTIFICATION.\n"
-        "Par exemple: BUY,0.01,100.0,200.0,Le marché est haussier."
+        "Réponds uniquement sous cette forme simple : SIGNAL,VOLUME,SL,TP,JUSTIFICATION.\n"
+        "Exemple : BUY,0.01,100.0,200.0,Le marché est haussier."
     )
     
     try:
