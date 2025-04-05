@@ -1,20 +1,24 @@
 from fastapi import FastAPI, Form
 import openai
 import os
+import json
 
 app = FastAPI()
 
-# Lire la clé API depuis la variable d'environnement
+# Récupère la clé API OpenAI depuis la variable d'environnement
 openai.api_key = os.environ.get("OPENAI_API_KEY", "")
 
 @app.post("/analyser")
 async def analyser(data: str = Form(...)):
-    # Construire un prompt simple
     prompt = (
-        "Tu es un analyste technique expert. Voici les données du marché :\n\n"
-        f"{data}\n\n"
-        "Réponds uniquement sous cette forme simple : SIGNAL,VOLUME,SL,TP,JUSTIFICATION.\n"
-        "Exemple : BUY,0.01,100.0,200.0,Le marché est haussier."
+        "Analyse de manière approfondie les données de marché fournies ci-dessous, issues de plusieurs timeframes (graphique actuel, quotidien et hebdomadaire) pour le symbole. "
+        "Ta mission est de réaliser une analyse technique complète et objective, en évaluant non seulement les indicateurs traditionnels (RSI, MACD, MA, ATR, ADX, etc.), "
+        "mais également en effectuant des recherches sur le sentiment global du marché. "
+        "Fournis une analyse détaillée en intégrant les tendances observées sur les différents timeframes et le sentiment du marché, et justifie clairement ta décision de trading. "
+        "Indique précisément un signal de trading (BUY, SELL ou WAIT) ainsi que des recommandations pour le VOLUME, le Stop Loss (SL) et le Take Profit (TP). "
+        "Réponds en format JSON exactement sous la forme suivante : "
+        "{\"SIGNAL\": \"...\", \"VOLUME\": ..., \"SL\": ..., \"TP\": ..., \"JUSTIFICATION\": \"...\"}.\n"
+        + data
     )
     
     try:
@@ -27,6 +31,10 @@ async def analyser(data: str = Form(...)):
             temperature=0.2
         )
         content = response.choices[0].message.content.strip()
-        return {"result": content}
+        # Transformer la réponse JSON en objet
+        data_json = json.loads(content)
+        # Convertir l'objet en CSV simple
+        csv_response = f'{data_json["SIGNAL"]},{data_json["VOLUME"]},{data_json["SL"]},{data_json["TP"]},{data_json["JUSTIFICATION"]}'
+        return {"result": csv_response}
     except Exception as e:
         return {"result": f"ERROR,{str(e)}"}
